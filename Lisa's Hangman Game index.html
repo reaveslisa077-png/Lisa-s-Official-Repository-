@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lias's Hangman Game</title>
+    <style>
+        body {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 0 20px;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            text-align: center;
+            color: lightpink;
+        }
+
+        #word {
+            margin: 20px 0;
+            font-size: 2rem;
+            letter-spacing: 0.35em;
+        }
+
+        #letters {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin: 24px 0;
+        }
+
+        #letters button {
+            padding: 10px;
+            border: 1px solid cadetblue;
+            border-radius: 6px;
+            background: blanchedalmond;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        #new-game {
+            padding: 10px 18px;
+            color: white;
+            background: brown;
+            cursor: pointer;
+        }
+
+        #drawing {
+            min-height: 1.5em;
+            font-family: fantasy;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lias's Hangman Game</h1>
+    <p>Guess the word, one letter at a time.</p>
+
+    <div id="drawing" aria-label="wrong guesses"></div>
+    <div id="word" aria-label="hidden word"></div>
+    <p id="message" aria-live="polite"></p>
+    <div id="letters" aria-label="letter guesses"></div>
+    <button id="new-game">New game</button>
+
+    <script>
+        const words = ["javascript", "hangman", "programming", "challenge", "developer"];
+        const alphabet = "abcdefghijklmnopqrstuvwxyz";
+        const drawings = [
+            "",
+            " o",
+            " o\n |",
+            " o\n/|",
+            " o\n/|\\",
+            " o\n/|\\\n/",
+            " o\n/|\\\n/ \\"
+        ];
+
+        let secretWord;
+        let guessedLetters;
+        let wrongGuesses;
+        let gameOver;
+
+        const wordElement = document.querySelector("#word");
+        const messageElement = document.querySelector("#message");
+        const lettersElement = document.querySelector("#letters");
+        const drawingElement = document.querySelector("#drawing");
+
+        function startGame() {
+            secretWord = words[Math.floor(Math.random() * words.length)];
+            guessedLetters = new Set();
+            wrongGuesses = 0;
+            gameOver = false;
+
+            lettersElement.replaceChildren();
+            for (const letter of alphabet) {
+                const button = document.createElement("button");
+                button.textContent = letter;
+                button.setAttribute("aria-label", `Guess ${letter}`);
+                button.addEventListener("click", () => guess(letter));
+                lettersElement.append(button);
+            }
+
+            render();
+        }
+
+        function guess(letter) {
+            if (gameOver || guessedLetters.has(letter)) return;
+
+            guessedLetters.add(letter);
+            if (!secretWord.includes(letter)) wrongGuesses++;
+
+            const won = [...secretWord].every((character) => guessedLetters.has(character));
+            if (won || wrongGuesses >= drawings.length - 1) {
+                gameOver = true;
+                messageElement.textContent = won
+                    ? "Congratulations! You guessed the word!"
+                    : `Game over! The word was ${secretWord}.`;
+            }
+
+            render();
+        }
+
+        function render() {
+            wordElement.textContent = [...secretWord]
+                .map((character) => guessedLetters.has(character) ? character : "-")
+                .join(" ");
+            drawingElement.textContent = drawings[wrongGuesses];
+
+            for (const button of lettersElement.querySelectorAll("button")) {
+                button.disabled = gameOver || guessedLetters.has(button.textContent);
+            }
+
+            if (!gameOver) {
+                messageElement.textContent = `Wrong guesses: ${wrongGuesses} of ${drawings.length - 1}`;
+            }
+        }
+
+        document.querySelector("#new-game").addEventListener("click", startGame);
+
+        document.addEventListener("keydown", (event) => {
+            const letter = event.key.toLowerCase();
+            if (alphabet.includes(letter)) guess(letter);
+        });
+
+        startGame();
+    </script>
+</body>
+</html>
