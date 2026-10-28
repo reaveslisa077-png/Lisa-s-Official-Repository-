@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- saved from url=(0038)https://ragebaitable-baco.netlify.app/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=59ae0fc3-2c6c-403d-aa13-de5865390d8c
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Lisa's Guessing Game</title>
+
+    <style>
+        body {
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            background-color: darkblue;
+            color: lightpink;
+            text-align: left;
+            padding: 40px 10px;
+        }
+        h1 {
+            color: lightcoral;
+        }
+
+        input, button {
+            font-size: 16px;
+            padding: 10px;
+            margin: 6px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+        </style>
+    </head>
+    <body>
+        <h1>Lisa's Guessing Game</h1>
+        <p>im thinking of a number 1 to 100. Can you guess it?</p>
+
+        <form id="guess-form">
+            <label for="guess">Your guess:</label>
+            <input id="guess" type="number" required="" step="1" min="1" max="100">
+            <button type="submit">Confirm</button>
+        </form>
+        
+        <p id="message" aria-live="polite"></p>
+        <button id="new-game" type="button">Start a new game</button>
+
+        <script>
+            const minimumNumber = 1;
+            const maximumNumber = 100;
+            const maximumGuesses = 10;
+
+            const guessForm = document.getElementById("guess-form");
+            const guessInput = document.getElementById("guess");
+            const message = document.getElementById("message");
+            const newGameButton = document.getElementById("new-game");
+
+            guessInput.min = minimumNumber;
+            guessInput.max = maximumNumber;
+
+            let secretNumber;
+            let numberOfGuesses;
+            let gameOver;
+
+            function startNewGame() {
+                secretNumber = Math.floor(
+                    Math.random() * (maximumNumber - minimumNumber + 1)
+                ) + minimumNumber;
+                numberOfGuesses = 0;
+                gameOver = false;
+                guessInput.value = "";
+                message.textContent = "";
+                guessInput.focus();
+            }
+
+            guessForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+
+                if (gameOver) {
+                    message.textContent = "Start a new game to play again.";
+                    return;
+                }
+
+                const guess = Number(guessInput.value);
+                if (!Number.isInteger(guess) || guess < minimumNumber || guess > maximumNumber) {
+                    message.textContent = `Choose a whole number from ${minimumNumber} to ${maximumNumber}.`;
+                    return;
+                }
+
+                numberOfGuesses++;
+                if (guess === secretNumber) {
+                    message.textContent = `You got it in ${numberOfGuesses} guess(es)!`;
+                    gameOver = true;
+                } else if (numberOfGuesses >= maximumGuesses) {
+                    message.textContent = `Game over! The number was ${secretNumber}. Start a new game to try again.`;
+                    gameOver = true;
+                } else if (guess < secretNumber) {
+                    message.textContent = "Too low! Try again.";
+                } else {
+                    message.textContent = "Too high! Try again.";
+                }
+
+                guessInput.select();
+            });
+
+            newGameButton.addEventListener("click", startNewGame);
+            startNewGame();
+    </script>
+
+<script async="" src="./Lisa's Guessing Game_files/hud" data-nf-variant="public" data-netlify-site-id="59ae0fc3-2c6c-403d-aa13-de5865390d8c" data-app-host="app.netlify.com" data-account-tier="free"></script>
+<iframe id="nl-badge-frame" title="Powered by Netlify" style="position: fixed; bottom: 0px; right: 0px; border: 0px; margin: 0px; padding: 0px; background: transparent; color-scheme: dark; z-index: 2147483645; width: 197px; height: 64px; clip-path: path(&quot;M 3 3 H 184 V 51 H 3 Z&quot;);" data-nl-ready="1" src="./Lisa's Guessing Game_files/saved_resource.html"></iframe></body></html>
