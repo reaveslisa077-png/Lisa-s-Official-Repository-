@@ -1,1 +1,1 @@
-To play any of these games, you'll need to download the any one or more of the HTML file to your computer, then open it in your web browser to start playing immediately.
+Welcome to my little game collection! I built these classic games—like Hangman, Tic Tac Toe, and Connect Four—using HTML, CSS, and JavaScript. To play, just download the HTML file for the game you want and open it right up in your web browser. Have fun exploring!
