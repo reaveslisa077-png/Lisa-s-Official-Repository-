@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lisa's Tictactoe Game</title>
+    <style>
+        * {
+        box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            font-family:Verdana, Geneva, Tahoma, sans-serif;
+            color:darkred;
+            background-color:cornflowerblue;
+        }
+
+        main {
+            width: min(90vw, 390px);
+            padding:28px;
+            text-align: center;
+            background-color:darksalmon;
+            border-radius: 20px;
+            box-shadow: 0 12px 35px White;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+        }
+
+        #status {
+            min-height: 1.5em;
+            margin: 12px 0 20px;
+            font-size: 1.1rem;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .square {
+            aspect-ratio: 1;
+            border: 0;
+            border-radius: 12px;
+            background: goldenrod;
+            color: white;
+            font-size: clamp(2.5rem, 15vw, 4rem);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .square:hover:empty {
+            background: #146e75;
+        }
+
+        .restart {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: darkred;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Lisa's Tictactoe Game</h1>
+        <div id="status">Player X's turn</div>
+
+        <div class="board" id="board">
+            <button class="square" type="button" aria-label="Top left"></button>
+            <button class="square" type="button" aria-label="Top center"></button>
+            <button class="square" type="button" aria-label="Top right"></button>
+            <button class="square" type="button" aria-label="Middle left"></button>
+            <button class="square" type="button" aria-label="Middle center"></button>
+            <button class="square" type="button" aria-label="Middle right"></button>
+            <button class="square" type="button" aria-label="Bottom left"></button>
+            <button class="square" type="button" aria-label="Bottom center"></button>
+            <button class="square" type="button" aria-label="Bottom right"></button>
+        </div>
+
+        <button id="restart" type="button" class="restart">Restart Game</button>
+    </main>
+
+    <script>
+        const squares = document.querySelectorAll(`.square`);
+        const status = document.getElementById(`status`);
+        const restartBtn = document.getElementById(`restart`);
+
+        let board = Array(9).fill('');
+        let currentPlayer = 'X';
+        let gameActive = true;
+
+        const winningConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function updateStatus(message) {
+            status.textContent = message;
+        }
+
+        function checkWinner() {
+            for (const combo of winningConditions) {
+                const [a, b, c] = combo;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    updateStatus(`Player ${board[a]} wins!`);
+                    gameActive = false;
+                    return true;
+                }
+            }
+            if (board.every(cell => cell !== '')) {
+                updateStatus("It's a draw!");
+                gameActive = false;
+                return true;
+            }
+
+            return false;
+        }
+
+        function handleSquareClick(event) {
+            const square = event.currentTarget;
+            const index = Array.from(squares).indexOf(square);
+
+            if (!gameActive || board[index] !== '') {
+                return;
+            }
+
+            board[index] = currentPlayer;
+            square.textContent = currentPlayer;
+
+            if (checkWinner()) {
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            updateStatus(`Player ${currentPlayer}'s turn`);
+        }
+
+        function resetGame() {
+            board = Array(9).fill('');
+            currentPlayer = 'X';
+            gameActive = true;
+
+            squares.forEach(square => {
+                square.textContent = '';
+            });
+            updateStatus("Player X's turn");
+        }
+
+        squares.forEach(square => {
+            square.addEventListener('click', handleSquareClick);
+        });
+
+        restartBtn.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>

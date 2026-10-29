@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Play Lisa's Memory Match Game and find all the matching pairs.">
+    <title>Lisa's Memory Match Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            display: grid;
+            place-items: center;
+            font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+            color: #fff;
+            background: rgb(29, 150, 155);
+        }
+
+        main {
+            width: min(100%, 440px);
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            color: #fff4d6;
+        }
+
+        #status {
+            min-height: 1.5em;
+            font-weight: 600;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: clamp(6px, 2vw, 10px);
+            margin: 20px 0;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            border: 0;
+            border-radius: 18px;
+            color: #fff;
+            background: #e78313;
+            font-size: clamp(1.5rem, 8vw, 2.5rem);
+            cursor: pointer;
+            box-shadow: 0 4px 8px #0002;
+        }
+
+        .card:hover:not(:disabled) {
+            background: #309754;
+        }
+
+        .card.revealed,
+        .card.matched {
+            color: #27335a;
+            background: #fff;
+        }
+
+        .card.matched {
+            cursor: default;
+            outline: 3px solid #65bd8b;
+        }
+
+        button:focus-visible {
+            outline: 3px solid #c50035;
+            outline-offset: 3px;
+        }
+
+        #restart {
+            padding: 10px 20px;
+            border: 0;
+            border-radius: 8px;
+            color: #fff;
+            background: #c50035;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        #restart:hover {
+            background: #a3002b;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Lisa's Memory Match Game</h1>
+        <p>Find all the matching pairs!</p>
+        <p id="status" aria-live="polite"></p>
+        <div id="board" role="group" aria-label="Memory cards"></div>
+        <button id="restart" type="button">Restart</button>
+    </main>
+
+    <script>
+        const symbols = ["🍎", "🍌", "🍇", "🍓", "🍒", "🍍", "🥝", "🥑"];
+        const boardElement = document.querySelector("#board");
+        const statusElement = document.querySelector("#status");
+        const restartButton = document.querySelector("#restart");
+
+        let cards = [];
+        let firstCard = null;
+        let secondCard = null;
+        let locked = false;
+        let moves = 0;
+        let hideCardsTimeout;
+
+        function startGame() {
+            window.clearTimeout(hideCardsTimeout);
+
+            cards = shuffle([...symbols, ...symbols]).map((symbol, index) => ({
+                id: index,
+                symbol,
+                revealed: false,
+                matched: false
+            }));
+
+            firstCard = null;
+            secondCard = null;
+            locked = false;
+            moves = 0;
+            statusElement.textContent = "Moves: 0";
+            renderBoard();
+        }
+
+        function shuffle(items) {
+            for (let index = items.length - 1; index > 0; index--) {
+                const randomIndex = Math.floor(Math.random() * (index + 1));
+                [items[index], items[randomIndex]] = [items[randomIndex], items[index]];
+            }
+
+            return items;
+        }
+
+        function renderBoard() {
+            boardElement.replaceChildren();
+
+            for (const card of cards) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "card";
+                button.textContent = card.revealed || card.matched ? card.symbol : "?";
+                button.setAttribute(
+                    "aria-label",
+                    card.revealed || card.matched ? `Card: ${card.symbol}` : "Hidden card"
+                );
+
+                if (card.revealed) button.classList.add("revealed");
+                if (card.matched) button.classList.add("matched");
+                button.disabled = card.matched || locked;
+                button.addEventListener("click", () => revealCard(card));
+                boardElement.appendChild(button);
+            }
+        }
+
+        function revealCard(card) {
+            if (locked || card.matched || card.revealed) return;
+
+            card.revealed = true;
+
+            if (firstCard === null) {
+                firstCard = card;
+                renderBoard();
+                return;
+            }
+
+            secondCard = card;
+            moves++;
+
+            if (firstCard.symbol === secondCard.symbol) {
+                firstCard.matched = true;
+                secondCard.matched = true;
+                firstCard = null;
+                secondCard = null;
+
+                const matchedAllCards = cards.every(currentCard => currentCard.matched);
+                statusElement.textContent = matchedAllCards
+                    ? `You won in ${moves} moves!`
+                    : `Moves: ${moves} — Match found!`;
+
+                renderBoard();
+                return;
+            }
+
+            locked = true;
+            statusElement.textContent = `Moves: ${moves} — Try again!`;
+            renderBoard();
+
+            hideCardsTimeout = window.setTimeout(() => {
+                firstCard.revealed = false;
+                secondCard.revealed = false;
+                firstCard = null;
+                secondCard = null;
+                locked = false;
+                statusElement.textContent = `Moves: ${moves}`;
+                renderBoard();
+            }, 900);
+        }
+
+        restartButton.addEventListener("click", startGame);
+        startGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Play Lisa's Connect Four game against the computer.">
+    <title>Lisa's Connect Four Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+            color: #fff;
+            background: rgb(11, 88, 183);
+        }
+
+        main {
+            width: min(100%, 520px);
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            color: #ffe0f0;
+        }
+
+        #status {
+            min-height: 1.5em;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: clamp(4px, 1.5vw, 8px);
+            margin: 20px 0;
+            padding: clamp(8px, 2.5vw, 12px);
+            border-radius: 16px;
+            background: peachpuff;
+            box-shadow: 0 8px 20px #0006;
+        }
+
+        .cell {
+            display: grid;
+            place-items: center;
+            aspect-ratio: 1;
+            min-width: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: #e8eefb;
+            cursor: pointer;
+        }
+
+        .cell:focus-visible,
+        #restart:focus-visible {
+            outline: 3px solid #ff9f1c;
+            outline-offset: 3px;
+        }
+
+        .cell::after {
+            width: 82%;
+            height: 82%;
+            border-radius: 50%;
+            background: transparent;
+            content: "";
+        }
+
+        .cell[data-player="red"]::after {
+            background: #f04452;
+        }
+
+        .cell[data-player="yellow"]::after {
+            background: #ffd43b;
+        }
+
+        .cell:disabled {
+            cursor: default;
+        }
+
+        #restart {
+            padding: 10px 18px;
+            border: 0;
+            border-radius: 8px;
+            color: #fff;
+            background: #172033;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        #restart:hover {
+            background: #293956;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .cell::after {
+                transition: background-color 120ms ease-in;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Lisa's Connect Four Game</h1>
+        <p id="status" aria-live="polite"></p>
+        <div id="board" role="group" aria-label="Connect Four game board"></div>
+        <button id="restart" type="button">New Game</button>
+    </main>
+
+    <script>
+        const ROWS = 6;
+        const COLUMNS = 7;
+        const AI_DEPTH = 4;
+        const COLUMN_ORDER = [3, 2, 4, 1, 5, 0, 6];
+        const DIRECTIONS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+        const boardElement = document.querySelector("#board");
+        const statusElement = document.querySelector("#status");
+        const restartButton = document.querySelector("#restart");
+
+        let board = [];
+        let gameOver = false;
+        let computerThinking = false;
+        let computerMoveTimeout;
+        let cells = [];
+
+        function startGame() {
+            window.clearTimeout(computerMoveTimeout);
+            board = Array.from({ length: ROWS }, () => Array(COLUMNS).fill(null));
+            gameOver = false;
+            computerThinking = false;
+            statusElement.textContent = "Your turn. You are red; the computer is yellow.";
+
+            if (cells.length === 0) {
+                for (let row = 0; row < ROWS; row++) {
+                    for (let column = 0; column < COLUMNS; column++) {
+                        const cell = document.createElement("button");
+                        cell.type = "button";
+                        cell.className = "cell";
+                        cell.addEventListener("click", () => playPlayerMove(column));
+                        boardElement.appendChild(cell);
+                        cells.push(cell);
+                    }
+                }
+            }
+
+            updateDisplay();
+        }
+
+        function playPlayerMove(column) {
+            if (gameOver || computerThinking) return;
+
+            const row = dropDisc(board, column, "red");
+            if (row === -1) return;
+
+            if (hasFour(board, row, column, "red")) {
+                gameOver = true;
+                statusElement.textContent = "You win!";
+                updateDisplay();
+                return;
+            }
+
+            if (isBoardFull(board)) {
+                gameOver = true;
+                statusElement.textContent = "It's a draw!";
+                updateDisplay();
+                return;
+            }
+
+            computerThinking = true;
+            statusElement.textContent = "The computer is thinking...";
+            updateDisplay();
+            computerMoveTimeout = window.setTimeout(playComputerMove, 350);
+        }
+
+        function playComputerMove() {
+            computerThinking = false;
+            const column = chooseComputerMove(board);
+
+            if (column === null) {
+                gameOver = true;
+                statusElement.textContent = "It's a draw!";
+                updateDisplay();
+                return;
+            }
+
+            const row = dropDisc(board, column, "yellow");
+            if (hasFour(board, row, column, "yellow")) {
+                gameOver = true;
+                statusElement.textContent = "The computer wins!";
+            } else if (isBoardFull(board)) {
+                gameOver = true;
+                statusElement.textContent = "It's a draw!";
+            } else {
+                statusElement.textContent = "Your turn.";
+            }
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let column = 0; column < COLUMNS; column++) {
+                    const cell = cells[row * COLUMNS + column];
+                    const player = board[row][column];
+                    cell.dataset.player = player || "";
+                    cell.setAttribute(
+                        "aria-label",
+                        `Row ${row + 1}, column ${column + 1}: ${player ? `${player} disc` : "empty"}`
+                    );
+                    cell.disabled = gameOver || computerThinking || board[0][column] !== null;
+                }
+            }
+        }
+
+        function dropDisc(position, column, player) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (position[row][column] === null) {
+                    position[row][column] = player;
+                    return row;
+                }
+            }
+
+            return -1;
+        }
+
+        function hasFour(position, row, column, player) {
+            return DIRECTIONS.some(([rowStep, columnStep]) => {
+                const count = 1
+                    + countInDirection(position, row, column, rowStep, columnStep, player)
+                    + countInDirection(position, row, column, -rowStep, -columnStep, player);
+                return count >= 4;
+            });
+        }
+
+        function countInDirection(position, row, column, rowStep, columnStep, player) {
+            let count = 0;
+            let nextRow = row + rowStep;
+            let nextColumn = column + columnStep;
+
+            while (
+                nextRow >= 0 && nextRow < ROWS
+                && nextColumn >= 0 && nextColumn < COLUMNS
+                && position[nextRow][nextColumn] === player
+            ) {
+                count++;
+                nextRow += rowStep;
+                nextColumn += columnStep;
+            }
+
+            return count;
+        }
+
+        function chooseComputerMove(position) {
+            let bestScore = -Infinity;
+            let bestColumn = null;
+
+            for (const column of getValidColumns(position)) {
+                const row = dropDisc(position, column, "yellow");
+                const score = minimax(position, AI_DEPTH - 1, -Infinity, Infinity, false);
+                position[row][column] = null;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestColumn = column;
+                }
+            }
+
+            return bestColumn;
+        }
+
+        function minimax(position, depth, alpha, beta, maximizing) {
+            if (hasAnyFour(position, "yellow")) return 1000 + depth;
+            if (hasAnyFour(position, "red")) return -1000 - depth;
+
+            const validColumns = getValidColumns(position);
+            if (depth === 0 || validColumns.length === 0) {
+                return validColumns.length === 0 ? 0 : evaluateBoard(position);
+            }
+
+            if (maximizing) {
+                let bestScore = -Infinity;
+
+                for (const column of validColumns) {
+                    const row = dropDisc(position, column, "yellow");
+                    bestScore = Math.max(
+                        bestScore,
+                        minimax(position, depth - 1, alpha, beta, false)
+                    );
+                    position[row][column] = null;
+                    alpha = Math.max(alpha, bestScore);
+                    if (beta <= alpha) break;
+                }
+
+                return bestScore;
+            }
+
+            let bestScore = Infinity;
+
+            for (const column of validColumns) {
+                const row = dropDisc(position, column, "red");
+                bestScore = Math.min(
+                    bestScore,
+                    minimax(position, depth - 1, alpha, beta, true)
+                );
+                position[row][column] = null;
+                beta = Math.min(beta, bestScore);
+                if (beta <= alpha) break;
+            }
+
+            return bestScore;
+        }
+
+        function hasAnyFour(position, player) {
+            for (let row = 0; row < ROWS; row++) {
+                for (let column = 0; column < COLUMNS; column++) {
+                    if (position[row][column] === player && hasFour(position, row, column, player)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function getValidColumns(position) {
+            return COLUMN_ORDER.filter(column => position[0][column] === null);
+        }
+
+        function isBoardFull(position) {
+            return position[0].every(cell => cell !== null);
+        }
+
+        function evaluateBoard(position) {
+            let score = 0;
+            const centerColumn = Math.floor(COLUMNS / 2);
+
+            for (let row = 0; row < ROWS; row++) {
+                if (position[row][centerColumn] === "yellow") score += 6;
+                if (position[row][centerColumn] === "red") score -= 6;
+            }
+
+            function scoreWindow(window) {
+                const computerPieces = window.filter(cell => cell === "yellow").length;
+                const playerPieces = window.filter(cell => cell === "red").length;
+                const emptySpaces = window.filter(cell => cell === null).length;
+
+                if (computerPieces === 4) score += 100;
+                else if (computerPieces === 3 && emptySpaces === 1) score += 10;
+                else if (computerPieces === 2 && emptySpaces === 2) score += 4;
+
+                if (playerPieces === 3 && emptySpaces === 1) score -= 12;
+            }
+
+            for (let row = 0; row < ROWS; row++) {
+                for (let column = 0; column <= COLUMNS - 4; column++) {
+                    scoreWindow([
+                        position[row][column],
+                        position[row][column + 1],
+                        position[row][column + 2],
+                        position[row][column + 3]
+                    ]);
+                }
+            }
+
+            for (let row = 0; row <= ROWS - 4; row++) {
+                for (let column = 0; column < COLUMNS; column++) {
+                    scoreWindow([
+                        position[row][column],
+                        position[row + 1][column],
+                        position[row + 2][column],
+                        position[row + 3][column]
+                    ]);
+                }
+            }
+
+            for (let row = 0; row <= ROWS - 4; row++) {
+                for (let column = 0; column <= COLUMNS - 4; column++) {
+                    scoreWindow([
+                        position[row][column],
+                        position[row + 1][column + 1],
+                        position[row + 2][column + 2],
+                        position[row + 3][column + 3]
+                    ]);
+                }
+            }
+
+            for (let row = 3; row < ROWS; row++) {
+                for (let column = 0; column <= COLUMNS - 4; column++) {
+                    scoreWindow([
+                        position[row][column],
+                        position[row - 1][column + 1],
+                        position[row - 2][column + 2],
+                        position[row - 3][column + 3]
+                    ]);
+                }
+            }
+
+            return score;
+        }
+
+        restartButton.addEventListener("click", startGame);
+        startGame();
+    </script>
+</body>
+</html>

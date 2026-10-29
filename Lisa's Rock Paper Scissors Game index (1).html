@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lisa's Rock Paper Scissors Game</title>
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family:Georgia, 'Times New Roman', Times, serif;
+        color:bisque;
+        background: linear-gradient(135deg, maroon, white);
+    }
+
+    .game {
+        width: min(100%, 520px);
+        padding: 32px;
+        text-align: center;
+        background: rgb(17, 148, 146);
+        border-radius: 24px;
+        box-shadow: 0 6px 48px lightpink;
+    }
+
+    h1 {
+        margin: 0 0 8px;
+        font-size: clamp(2rem, 8vw, 4rem);
+    }
+
+    .subtitle {
+        margin: 0 0 28px;
+    }
+
+    .choices {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    button {
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .choice {
+        min-width: 120px;
+        padding: 16px;
+        border:2px solid bisque;
+        border-radius: 18px;
+        background: rgb(139, 0, 42);
+        color: inherit;
+        transition: transform 150ms ease, border-color 150ms ease;
+    }
+
+    .choice:hover,
+    .choice:focus-visible {
+        transform: translateY(-3px);
+        border-color:antiquewhite;
+        outline: none;
+    }
+
+    .emoji {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 2.5rem;
+    }
+
+    #result {
+        min-height: 3em;
+        margin: 28px 0 16px;
+        font-size: 1.15rem;
+        font-weight: bold;
+    }
+
+    .score {
+        margin: 0 0 20px;
+        color:indianred;
+    }
+
+    #reset {
+        padding: 10px 18px;
+        border: 0;
+        border-radius: 10px;
+        background:rgb(236, 240, 14);
+        color: black;
+    }
+
+    #reset:hover {
+        background: rgb(221, 27, 63);
+    }
+    </style>
+</head>
+<body>
+    <main class="game">
+        <h1>Lisa's Rock Paper Scissors Game</h1>
+        <p class="subtitle">Choose your move to play against the computer.</p>
+
+        <div class="choices" aria-label="Choose your move">
+            <button class="choice" data-choice="rock">
+                <span class="emoji" aria-hidden="true">✊</span> Rock
+            </button>
+            <button class="choice" data-choice="paper">
+                <span class="emoji" aria-hidden="true">✋</span> Paper
+            </button>
+            <button class="choice" data-choice="scissors">
+                <span class="emoji" aria-hidden="true">✌️</span> Scissors
+            </button>
+        </div>
+
+        <p id="result" aria-live="polite">Make your move!</p>
+        <p class="score">
+            You: <span id="player-score">0</span>
+            &nbsp;-&nbsp;
+            Computer: <span id="computer-score">0</span>
+        </p>
+        <button id="reset" type="button">Reset score</button>
+    </main>
+
+    <script>
+        const choices = ["rock", "paper", "scissors"];
+        const resultText = document.querySelector("#result");
+        const playerScoreText = document.querySelector("#player-score");
+        const computerScoreText = document.querySelector("#computer-score");
+
+        let playerScoreValue = 0;
+        let computerScoreValue = 0;
+
+        document.querySelectorAll(".choice").forEach((button) => {
+            button.addEventListener("click", () => {
+                const playerChoice = button.dataset.choice;
+                const computerChoice = choices[Math.floor(Math.random() * choices.length)];
+
+                if (playerChoice === computerChoice) {
+                    resultText.textContent = `It's a tie! You both chose ${playerChoice}.`;
+                } else if (
+                    (playerChoice === "rock" && computerChoice === "scissors") ||
+                    (playerChoice === "paper" && computerChoice === "rock") ||
+                    (playerChoice === "scissors" && computerChoice === "paper")
+                ) {
+                    playerScoreValue++;
+                    resultText.textContent =
+                        `You win! ${capitalize(playerChoice)} beats ${computerChoice}.`;
+                } else {
+                    computerScoreValue++;
+                    resultText.textContent =
+                        `Computer wins! ${capitalize(computerChoice)} beats ${playerChoice}.`;
+                }
+
+                playerScoreText.textContent = playerScoreValue;
+                computerScoreText.textContent = computerScoreValue;
+            });
+        });
+
+        document.querySelector("#reset").addEventListener("click", () => {
+                playerScoreValue = 0;
+                computerScoreValue = 0;
+                playerScoreText.textContent = playerScoreValue;
+                computerScoreText.textContent = computerScoreValue;
+                resultText.textContent = "Score reset. Make your move!";
+        });
+
+        function capitalize(word) {
+            return word[0].toUpperCase() + word.slice(1);
+        }
+    </script>
+</body>
+</html>
